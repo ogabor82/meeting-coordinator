@@ -27,6 +27,10 @@ if "history" not in st.session_state:
     # history: {"speaker": "USER/FE/BA/CUSTOMER", "text": "..."}
     st.session_state.history = []
 
+if "seen_ids" not in st.session_state:
+    st.session_state.seen_ids = set()
+
+
 if "last_brief_hash" not in st.session_state:
     st.session_state.last_brief_hash = None
 
@@ -51,6 +55,7 @@ if st.session_state.last_brief_hash != current_hash:
     st.session_state.last_brief_hash = current_hash
     st.session_state.thread_id = str(uuid4())
     st.session_state.history = []
+    st.session_state.seen_ids = set()
 
 app = get_cached_app(product_brief)
 
@@ -69,11 +74,10 @@ if prompt:
         st.markdown(prompt)
 
     placeholders = {}  # node_name -> st.empty()
-    last_text_by_node = {}  # node_name -> last text (persisthez)
 
     initial = {
         "messages": [{"role": "user", "content": prompt}],
-        "turn": 0,  # MVP: mindig 0; thread_id a checkpointerben viszi a folytonosságot
+        "turn": 0,
     }
 
     for update in app.stream(
@@ -93,22 +97,18 @@ if prompt:
             speaker = node_name.upper()
             text = content_to_text(last.content)
 
-            # live bubble
+            # 2/a) live bubble frissítés node-onként
             if node_name not in placeholders:
                 with st.chat_message("assistant"):
                     placeholders[node_name] = st.empty()
-
             placeholders[node_name].markdown(f"**{speaker}**\n\n{text}")
 
-            # ✅ ez a lényeg: elmentjük a legutolsó szöveget node-onként
-            last_text_by_node[node_name] = text
+            # 2/b) ✅ transcript mentése dupe nélkül
+            mid = getattr(last, "id", None)
+            key = mid or f"{node_name}:{hash(text)}"  # fallback, ha nincs id
 
-    # 3) ✅ stream végén persist a history-ba (fix sorrendben)
-    order = ["customer", "fe", "ba"]
-    for node in order:
-        if node in last_text_by_node:
-            st.session_state.history.append(
-                {"speaker": node.upper(), "text": last_text_by_node[node]}
-            )
+            if key not in st.session_state.seen_ids:
+                st.session_state.seen_ids.add(key)
+                st.session_state.history.append({"speaker": speaker, "text": text})
 
     st.rerun()
