@@ -71,7 +71,7 @@ class State(TypedDict):
 
 def route(state: State):
     # 4 váltás = CUSTOMER, FE, BA, FE, BA (2 kör)
-    if state["turn"] >= 12:
+    if state["turn"] >= 6:
         return END
 
     queue = [
@@ -211,11 +211,14 @@ PRODUCT_BRIEF = """
 """
 
 
-def run_conversation(app, user_message: str, thread_id: str):
+def run_conversation(
+    app, user_message: str, thread_id: str, *, is_new_thread: bool = False
+):
     initial = {
         "messages": [{"role": "user", "content": user_message}],
-        "turn": 0,
     }
+    if is_new_thread:
+        initial["turn"] = 0
 
     last_printed_id = None
     final_state = None
@@ -228,7 +231,6 @@ def run_conversation(app, user_message: str, thread_id: str):
         final_state = state
         last = state["messages"][-1]
 
-        # duplikált kiírás ellen
         mid = getattr(last, "id", None)
         if mid and mid == last_printed_id:
             continue
@@ -246,8 +248,19 @@ def run_conversation(app, user_message: str, thread_id: str):
 if __name__ == "__main__":
     thread_id = "demo-thread-1"
 
-    product_brief = PRODUCT_BRIEF
-    user_message = "Egy egyszerű dropshipping termék landing + checkout flow-t szeretnék. Hogyan kezdjünk neki?"
+    app = build_app(PRODUCT_BRIEF)
 
-    app = build_app(product_brief)
-    final_state = run_conversation(app, user_message, thread_id)
+    run_conversation(
+        app,
+        "Egy egyszerű dropshipping termék landing + checkout flow-t szeretnék. Hogyan kezdjünk neki?",
+        thread_id,
+        is_new_thread=True,
+    )
+
+    # második user üzenet ugyanabba a beszélgetésbe
+    run_conversation(
+        app,
+        "Oké. Legyen Stripe test. Milyen adatokat kérjünk be checkoutnál?",
+        thread_id,
+        is_new_thread=False,
+    )
