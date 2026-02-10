@@ -16,6 +16,30 @@ def get_cached_app(product_brief: str):
     return build_app(product_brief)
 
 
+SPEAKERS = {
+    "USER": {"label": "User", "emoji": "👤"},
+    "CUSTOMER": {"label": "Customer", "emoji": "🛒"},
+    "FE": {"label": "FE Dev", "emoji": "🧑‍💻"},
+    "BA": {"label": "Business Analyst", "emoji": "🧑‍💼"},
+}
+
+NODE_TO_SPEAKER = {
+    "customer": "CUSTOMER",
+    "fe": "FE",
+    "ba": "BA",
+}
+
+
+def render_item(item):
+    speaker = item["speaker"]
+    meta = SPEAKERS.get(speaker, {"label": speaker, "emoji": "🤖"})
+    role = "user" if speaker == "USER" else "assistant"
+
+    with st.chat_message(role):
+        st.markdown(f"{meta['emoji']} **{meta['label']}**")
+        st.markdown(item["text"])
+
+
 st.set_page_config(page_title="Meeting Coordinator MVP", layout="wide")
 st.title("🧩 Meeting Coordinator — MVP")
 
@@ -61,17 +85,14 @@ app = get_cached_app(product_brief)
 
 # --- Render history ---
 for item in st.session_state.history:
-    role = "user" if item["speaker"] == "USER" else "assistant"
-    with st.chat_message(role):
-        st.markdown(f"**{item['speaker']}**\n\n{item['text']}")
+    render_item(item)
 
 # --- Chat input ---
 prompt = st.chat_input("Írd ide a user üzenetet…")
 if prompt:
     # 1) user message mentése + megjelenítés
     st.session_state.history.append({"speaker": "USER", "text": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
+    render_item({"speaker": "USER", "text": prompt})
 
     placeholders = {}  # node_name -> st.empty()
 
@@ -94,14 +115,17 @@ if prompt:
             if not isinstance(last, AIMessage):
                 continue
 
-            speaker = node_name.upper()
+            speaker = NODE_TO_SPEAKER[node_name]
             text = content_to_text(last.content)
 
             # 2/a) live bubble frissítés node-onként
             if node_name not in placeholders:
                 with st.chat_message("assistant"):
                     placeholders[node_name] = st.empty()
-            placeholders[node_name].markdown(f"**{speaker}**\n\n{text}")
+            meta = SPEAKERS.get(speaker, {"label": speaker, "emoji": "🤖"})
+            placeholders[node_name].markdown(
+                f"{meta['emoji']} **{meta['label']}**\n\n{text}"
+            )
 
             # 2/b) ✅ transcript mentése dupe nélkül
             mid = getattr(last, "id", None)
