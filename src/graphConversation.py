@@ -125,6 +125,28 @@ customer_llm = ChatOpenAI(model="gpt-4.1-nano", temperature=0, use_responses_api
 #     api_key="lm-studio",
 #     use_responses_api=False,
 # )
+
+# PRODUCT_BRIEF = """
+# You would like ttom implement a Duolingo like learning platform for children.
+#         The platform should have the following features:
+#         - A login page
+#         - A registration page
+#         - A dashboard page
+#         - A profile page
+#         - A settings page
+#         - A logout page
+# """
+PRODUCT_BRIEF = """
+    Goal: single-product landing page + checkout flow.
+    MVP features:
+    - Landing page: benefits, FAQ, reviews (mock), price
+    - Checkout: shipping info + payment (can be Stripe test)
+    - Order confirmation page + email receipt (can be mocked)
+    Constraints:
+    - Must be mobile-first and fast
+    Non-goals:
+    - Full catalog, user accounts (later)
+"""
 customer_agent = create_agent(
     model=customer_llm,
     tools=[],
@@ -132,14 +154,7 @@ customer_agent = create_agent(
         You are a the customer of the product discovery meeting.
         Always reply in Hungarian.
         Always answer the business analyst's questions.
-        You would like ttom implement a Duolingo like learning platform for children.
-        The platform should have the following features:
-        - A login page
-        - A registration page
-        - A dashboard page
-        - A profile page
-        - A settings page
-        - A logout page
+        {PRODUCT_BRIEF}
     """,
 )
 
@@ -229,7 +244,9 @@ initial = {
             "role": "user",
             # "content": "Egy egyszerű todo listát szeretnék készíteni. Hogyan kezdjünk neki?",
             # "content": "Egy egyszerű kereshető és sorrendezhető táblázat kellene a user-ek oldalra. Hogyan kezdjünk neki?",
-            "content": "Egy Duolingo szerű oktatóoldalt szeretnénk gyerekeknek készíteni. Hogyan kezdjünk neki?",
+            # "content": "Egy Duolingo szerű oktatóoldalt szeretnénk gyerekeknek készíteni. Hogyan kezdjünk neki?",
+            # "content": "Egy admin felület kell, ahol a user-ek listája kereshető, szűrhető és rendezhető. Hogyan kezdjünk neki?",
+            "content": "Egy egyszerű dropshipping termék landing + checkout flow-t szeretnék. Hogyan kezdjünk neki?",
         }
     ],
     "turn": 0,
