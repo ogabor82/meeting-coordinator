@@ -210,37 +210,44 @@ PRODUCT_BRIEF = """
     - Full catalog, user accounts (later)
 """
 
-app = build_app(PRODUCT_BRIEF)
-first_message = HumanMessage(
-    content="Egy egyszerű dropshipping termék landing + checkout flow-t szeretnék. Hogyan kezdjünk neki?"
-)
 
-initial = {
-    "messages": [
-        {"role": "user", "content": first_message.content},
-    ],
-    "turn": 0,
-}
+def run_conversation(app, user_message: str, thread_id: str):
+    initial = {
+        "messages": [{"role": "user", "content": user_message}],
+        "turn": 0,
+    }
 
-last_printed_id = None
+    last_printed_id = None
+    final_state = None
 
-thread_id = "demo-thread-1"
+    for state in app.stream(
+        initial,
+        config={"configurable": {"thread_id": thread_id}},
+        stream_mode="values",
+    ):
+        final_state = state
+        last = state["messages"][-1]
 
-for state in app.stream(
-    initial,
-    config={"configurable": {"thread_id": thread_id}},
-    stream_mode="values",
-):
-    last = state["messages"][-1]
+        # duplikált kiírás ellen
+        mid = getattr(last, "id", None)
+        if mid and mid == last_printed_id:
+            continue
+        last_printed_id = mid
 
-    # duplikált kiírás ellen (ugyanazt a messaget többször is megkaphatod)
-    mid = getattr(last, "id", None)
-    if mid and mid == last_printed_id:
-        continue
-    last_printed_id = mid
+        if isinstance(last, AIMessage):
+            who = (getattr(last, "name", None) or "assistant").upper()
+            print(f"\n🤖 {who}:\n{content_to_text(last.content)}")
+        elif isinstance(last, HumanMessage):
+            print(f"\n👤 USER:\n{content_to_text(last.content)}")
 
-    if isinstance(last, AIMessage):
-        who = (getattr(last, "name", None) or "assistant").upper()
-        print(f"\n🤖 {who}:\n{content_to_text(last.content)}")
-    elif isinstance(last, HumanMessage):
-        print(f"\n👤 USER:\n{content_to_text(last.content)}")
+    return final_state
+
+
+if __name__ == "__main__":
+    thread_id = "demo-thread-1"
+
+    product_brief = PRODUCT_BRIEF
+    user_message = "Egy egyszerű dropshipping termék landing + checkout flow-t szeretnék. Hogyan kezdjünk neki?"
+
+    app = build_app(product_brief)
+    final_state = run_conversation(app, user_message, thread_id)
