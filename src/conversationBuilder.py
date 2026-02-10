@@ -11,7 +11,7 @@ from pathlib import Path
 import sys
 
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from pydantic_core import Url
+import hashlib
 
 load_dotenv()
 
@@ -245,10 +245,22 @@ def run_conversation(
     return final_state
 
 
+_APP_CACHE = {}
+
+
+def get_app(product_brief: str):
+    brief_hash = hashlib.sha256(product_brief.encode("utf-8")).hexdigest()[:12]
+
+    if brief_hash not in _APP_CACHE:
+        _APP_CACHE[brief_hash] = build_app(product_brief)
+
+    return _APP_CACHE[brief_hash]
+
+
 if __name__ == "__main__":
     thread_id = "demo-thread-1"
 
-    app = build_app(PRODUCT_BRIEF)
+    app = get_app(PRODUCT_BRIEF)
 
     run_conversation(
         app,
