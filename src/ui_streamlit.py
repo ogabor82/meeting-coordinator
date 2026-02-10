@@ -63,17 +63,17 @@ for item in st.session_state.history:
 # --- Chat input ---
 prompt = st.chat_input("Írd ide a user üzenetet…")
 if prompt:
-    # 1) show user message
+    # 1) user message mentése + megjelenítés
     st.session_state.history.append({"speaker": "USER", "text": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # 2) stream graph updates, node based on who is speaking
-    placeholders = {}  # node_name -> st.empty() (live updating)
+    placeholders = {}  # node_name -> st.empty()
+    last_text_by_node = {}  # node_name -> last text (persisthez)
 
     initial = {
         "messages": [{"role": "user", "content": prompt}],
-        "turn": 0,  # new turn=0; thread_id handles the continuation
+        "turn": 0,  # MVP: mindig 0; thread_id a checkpointerben viszi a folytonosságot
     }
 
     for update in app.stream(
@@ -81,7 +81,6 @@ if prompt:
         config={"configurable": {"thread_id": st.session_state.thread_id}},
         stream_mode="updates",
     ):
-        # update: {"customer": {"messages": [...], "turn": 1}}
         for node_name, partial_state in update.items():
             msgs = partial_state.get("messages", [])
             if not msgs:
@@ -94,19 +93,22 @@ if prompt:
             speaker = node_name.upper()
             text = content_to_text(last.content)
 
-            # 2/a) create the bubble for the first time
+            # live bubble
             if node_name not in placeholders:
                 with st.chat_message("assistant"):
                     placeholders[node_name] = st.empty()
 
-            # 2/b) live update in the same bubble
             placeholders[node_name].markdown(f"**{speaker}**\n\n{text}")
 
-    # 3) at the end of the stream, save the last displayed text to history
-    for node_name, ph in placeholders.items():
-        # unfortunately we can't read the text from the placeholder,
-        # so in MVP we only save as much as you just saw:
-        # -> simple solution: run again with stream_mode="values" and extract the final state
-        pass
+            # ✅ ez a lényeg: elmentjük a legutolsó szöveget node-onként
+            last_text_by_node[node_name] = text
+
+    # 3) ✅ stream végén persist a history-ba (fix sorrendben)
+    order = ["customer", "fe", "ba"]
+    for node in order:
+        if node in last_text_by_node:
+            st.session_state.history.append(
+                {"speaker": node.upper(), "text": last_text_by_node[node]}
+            )
 
     st.rerun()
