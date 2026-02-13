@@ -16,7 +16,7 @@ Anwser the user's question in a friendly and helpful manner.
 
 
 frontendDeveloper = ChatOpenAI(
-    model="gpt-5-nano",
+    model="gpt-4.1-mini",
     temperature=0,
     use_responses_api=True,
 )
