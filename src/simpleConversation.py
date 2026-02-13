@@ -27,8 +27,12 @@ class ChatState(MessagesState):
 
 # ---- NODE ----
 def chatbot(state: ChatState):
-    response = frontendDeveloperAgent.invoke(state["messages"])
-    return {"messages": response}
+    humanmessage = HumanMessage(content=input("You: "))
+    state["messages"].append(humanmessage)
+    result = frontendDeveloperAgent.invoke({"messages": state["messages"]})
+    # Agent returns full state; only append the new message(s).
+    new_messages = result["messages"][len(state["messages"]) :]
+    return {"messages": new_messages}
 
 
 def should_continue(state: ChatState) -> Literal["chatbot", END]:
