@@ -8,8 +8,6 @@ Choose the exact role based on the last message from the user.
 The roles are:
 - frontenddeveloper
 - businessanalyst
-- customer
-- other
 
 Return the role in the following format:
 {role}

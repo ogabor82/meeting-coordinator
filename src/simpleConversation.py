@@ -16,7 +16,7 @@ from src.agents import businessAnalystAgent  # noqa: E402
 
 
 class ChatState(MessagesState):
-    role: Literal["frontenddeveloper", "businessanalyst", "customer", "other"]
+    role: Literal["frontenddeveloper", "businessanalyst", "customer"]
 
 
 def frontendDeveloperBot(state: ChatState):
