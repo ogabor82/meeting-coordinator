@@ -15,7 +15,7 @@ def main():
         state = graph.invoke(state)
 
         lastmessage = state["messages"][-1]
-        print("Chatbot:", lastmessage.content[0]["text"])
+        print(f"Chatbot ({state['last_agent']}):", lastmessage.content[0]["text"])
 
 
 if __name__ == "__main__":

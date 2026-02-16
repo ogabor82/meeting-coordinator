@@ -15,18 +15,21 @@ from src.orchestratoragents import roleSelectorAgent  # noqa: E402
 from src.agents import businessAnalystAgent  # noqa: E402
 
 
+Role = Literal["frontenddeveloper", "businessanalyst"]
+
+
 class ChatState(MessagesState):
-    role: Literal["frontenddeveloper", "businessanalyst", "customer"]
+    last_agent: Role
 
 
 def frontendDeveloperBot(state: ChatState):
     result = frontendDeveloperAgent.invoke({"messages": state["messages"]})
-    return {"messages": result["messages"]}
+    return {"messages": result["messages"], "last_agent": "frontenddeveloper"}
 
 
 def businessAnalystBot(state: ChatState):
     result = businessAnalystAgent.invoke({"messages": state["messages"]})
-    return {"messages": result["messages"]}
+    return {"messages": result["messages"], "last_agent": "businessanalyst"}
 
 
 def roleSelector(
